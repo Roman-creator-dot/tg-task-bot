@@ -7,7 +7,9 @@ from db.models import Base
 import os
 
 # URL подключения к базе данных (лучше хранить в .env)
-DATABASE_URL = "postgresql+asyncpg://postgres:LOKO2000@localhost:5432/task_bot_db"
+#DATABASE_URL = "postgresql+asyncpg://postgres:LOKO2000@localhost:5432/task_bot_db"
+
+DATABASE_URL = os.getenv("DATABASE_URL")
 
 if not DATABASE_URL:
     raise ValueError("❌ DATABASE_URL is not loaded. Проверь .env файл и путь к нему")
