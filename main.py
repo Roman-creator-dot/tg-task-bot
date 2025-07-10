@@ -11,26 +11,27 @@ from db.base import init_db, async_session_maker
 from bot.handlers import register_handlers
 from bot.reactions import router as reaction_router
 from aiohttp import web
+from fastapi import FastAPI
+import uvicorn
+import asyncio
+import threading
 
 
 if sys.platform.startswith('win'):
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
 
-async def handle(request):
-    return web.Response(text="I'm alive!")
 
-def run_web_server():
-    app = web.Application()
-    app.router.add_get("/", handle)
-    runner = web.AppRunner(app)
+# FasrAPI  что бы бот не засыпал    
+app = FastAPI()
 
-    async def start():
-        await runner.setup()
-        site = web.TCPSite(runner, "0.0.0.0", 3000)
-        await site.start()
-
-    asyncio.create_task(start()) # чтобы не засыпал  в render
+@app.get("/")
+async def root():
+    return {"status": "🤖 Бот работает"} 
+# 🔹 Запуск FastAPI в отдельном потоке
+def run_fastapi():
+    port = int(os.environ.get("PORT", 10000))
+    uvicorn.run(app, host="0.0.0.0", port=port)
 # Загружаем переменные окружения из .env
 load_dotenv()
 
@@ -64,7 +65,9 @@ async def main():
     scheduler = AsyncIOScheduler(timezone="Europe/Belgrade")  # Создаем планировщик задач
     start_reminders(scheduler, bot, async_session_maker)
     await dp.start_polling(bot) # Запуск polling
-    run_web_server()
 
 if __name__ == "__main__":
+        # 🔸 Запуск FastAPI в отдельном потоке
+    threading.Thread(target=run_fastapi).start()
+    #запуск бота
     asyncio.run(main())
