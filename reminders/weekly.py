@@ -16,6 +16,15 @@ from sqlalchemy.ext.asyncio import async_sessionmaker
 from db.models import User, Task
 from db.queries import get_leaderboard_data  # убедись, что функция импортирована
 
+#  Отправка heartbeat админу (каждую минуту)
+async def heartbeat_admin(bot: Bot):
+    admin_id = os.getenv("ADMIN_ID")
+    if admin_id:
+        try:
+            await bot.send_message(int(admin_id), "🤖 Ещё живой!")
+        except Exception as e:
+            print(f"❌ Ошибка при отправке heartbeat админу: {e}")
+
 async def weekly_reminder(bot: Bot, session_maker: async_sessionmaker):
     print("🔁 Запущен weekly_reminder...")
 
@@ -75,7 +84,14 @@ def start_reminders(scheduler: AsyncIOScheduler, bot: Bot, session_maker: async_
     scheduler.add_job(
         weekly_reminder,
         trigger="interval",
-        minutes=1,  # замени на cron, когда будешь запускать на проде
+        minutes=15,
         args=[bot, session_maker],
+    )
+    # 🔁 Фейковая отправка админу (каждую минуту)
+    scheduler.add_job(
+        heartbeat_admin,
+        trigger="interval",
+        minutes=1,
+        args=[bot],
     )
     scheduler.start()
