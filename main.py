@@ -1,7 +1,8 @@
 import asyncio
 import os
 import sys
-from aiogram import Bot, Dispatcher, types
+from multiprocessing import Process
+from aiogram import Bot, Dispatcher
 from aiogram.fsm.storage.memory import MemoryStorage
 from dotenv import load_dotenv
 from sqlalchemy import text
@@ -10,64 +11,53 @@ from reminders.weekly import start_reminders
 from db.base import init_db, async_session_maker
 from bot.handlers import register_handlers
 from bot.reactions import router as reaction_router
-from aiohttp import web
 from fastapi import FastAPI
 import uvicorn
-import asyncio
-import threading
 
-
+# ✅ Настройка Windows loop (если локально)
 if sys.platform.startswith('win'):
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
-
-
-# FasrAPI  что бы бот не засыпал    
+# ✅ FastAPI-приложение для Render
 app = FastAPI()
 
 @app.get("/")
 async def root():
-    return {"status": "🤖 Бот работает"} 
-# 🔹 Запуск FastAPI в отдельном потоке
+    return {"status": "🤖 Бот работает"}
+
+# ✅ Отдельная функция запуска FastAPI
 def run_fastapi():
     port = int(os.environ.get("PORT", 10000))
-    uvicorn.run(app, host="0.0.0.0", port=port)
-# Загружаем переменные окружения из .env
-load_dotenv()
+    # "main:app" — указывает FastAPI, где искать объект app
+    uvicorn.run("main:app", host="0.0.0.0", port=port, log_level="info")
 
-BOT_TOKEN = os.getenv("BOT_TOKEN")
-print(f"BOT_TOKEN: {BOT_TOKEN}")  # Проверяем токен
-ID_CHAT = os.getenv("CHAT_ID")
-print(f"ID_CHAT: {ID_CHAT}")  # Проверяем ID чата
-
-# Инициализация бота и диспетчера
-bot = Bot(token=BOT_TOKEN)
-dp = Dispatcher(storage=MemoryStorage())
-
-
-
-dp.include_router(reaction_router)
-
-# Регистрируем все хендлеры
-register_handlers(dp)
-
-
-
-# Простой хендлер для отладки
-#@dp.message()
-#async def echo_all_messages(message: types.Message):
-#    print(f"📩 Получено сообщение: {message.text}")
-#    await message.answer("Бот работает, но команда не распознана.")
-
+# ✅ Основной async-функция запуска бота
 async def main():
-    await init_db()  # Инициализация базы данных
-    print("Бот запущен с Polling ✅")
-    scheduler = AsyncIOScheduler(timezone="Europe/Belgrade")  # Создаем планировщик задач
-    start_reminders(scheduler, bot, async_session_maker)
-    await dp.start_polling(bot) # Запуск polling
+    load_dotenv()
 
+    BOT_TOKEN = os.getenv("BOT_TOKEN")
+    CHAT_ID = os.getenv("CHAT_ID")
+
+    print(f"BOT_TOKEN: {BOT_TOKEN}")
+    print(f"CHAT_ID: {CHAT_ID}")
+
+    bot = Bot(token=BOT_TOKEN)
+    dp = Dispatcher(storage=MemoryStorage())
+
+    dp.include_router(reaction_router)
+    register_handlers(dp)
+
+    await init_db()
+    print("✅ Polling запущен")
+
+    scheduler = AsyncIOScheduler(timezone="Europe/Belgrade")
+    start_reminders(scheduler, bot, async_session_maker)
+
+    await dp.start_polling(bot)
+
+# ✅ Точка входа
 if __name__ == "__main__":
-        # 🔸 Запуск FastAPI в отдельном потоке
-    threading.Thread(target=run_fastapi).start()
-    #запуск бота
+    # 🟡 Запускаем FastAPI сервер в отдельном процессе
+    Process(target=run_fastapi).start()
+    # 🟢 Запускаем основной event loop для бота
     asyncio.run(main())
