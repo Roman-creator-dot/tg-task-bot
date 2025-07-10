@@ -10,11 +10,27 @@ from reminders.weekly import start_reminders
 from db.base import init_db, async_session_maker
 from bot.handlers import register_handlers
 from bot.reactions import router as reaction_router
+from aiohttp import web
 
 
 if sys.platform.startswith('win'):
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
+
+async def handle(request):
+    return web.Response(text="I'm alive!")
+
+def run_web_server():
+    app = web.Application()
+    app.router.add_get("/", handle)
+    runner = web.AppRunner(app)
+
+    async def start():
+        await runner.setup()
+        site = web.TCPSite(runner, "0.0.0.0", 3000)
+        await site.start()
+
+    asyncio.create_task(start()) # чтобы не засыпал  в render
 # Загружаем переменные окружения из .env
 load_dotenv()
 
@@ -47,7 +63,8 @@ async def main():
     print("Бот запущен с Polling ✅")
     scheduler = AsyncIOScheduler(timezone="Europe/Belgrade")  # Создаем планировщик задач
     start_reminders(scheduler, bot, async_session_maker)
-    await dp.start_polling(bot)  # Запуск polling
+    await dp.start_polling(bot) # Запуск polling
+    run_web_server()
 
 if __name__ == "__main__":
     asyncio.run(main())
