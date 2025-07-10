@@ -1,6 +1,8 @@
-aiogram==3.0.0b7
-aiohttp==3.8.5
-python-dotenv==1.0.1
-SQLAlchemy==2.0.30
-asyncpg==0.29.0
-pydantic==1.10.13
+aiogram==3.20.0.post0
+httpx==0.28.1
+asyncpg==0.30.0
+SQLAlchemy==2.0.41
+python-dotenv==1.1.1
+flask>=2.0.0
+fastapi==0.115.2
+uvicorn[standard]
