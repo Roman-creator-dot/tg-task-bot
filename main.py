@@ -23,7 +23,7 @@ app = FastAPI()
 async def root():
     return {"status": "🤖 Бот работает"}
 
-# ✅ Запуск бота
+# ✅ Асинхронная функция запуска бота
 async def start_bot():
     load_dotenv()
 
@@ -49,28 +49,27 @@ async def start_bot():
     print("✅ Polling запущен")
     await dp.start_polling(bot)
 
-# ✅ Главная функция запуска всего приложения
-def run():
-    loop = asyncio.get_event_loop()
-    
-    # Запускаем бота как фоновую задачу
-    loop.create_task(start_bot())
-
-    # Запускаем FastAPI на том же loop
+# ✅ Асинхронная функция запуска FastAPI сервера
+async def start_fastapi():
     port = int(os.environ.get("PORT", 10000))
     config = uvicorn.Config(app=app, host="0.0.0.0", port=port, log_level="info")
     server = uvicorn.Server(config)
-
     print(f"🌐 FastAPI запускается на порту {port}")
-    loop.run_until_complete(server.serve())
+    await server.serve()
+
+# ✅ Главная точка запуска всего
+async def main():
+    await asyncio.gather(
+        start_bot(),
+        start_fastapi()
+    )
 
 # ✅ Точка входа
 if __name__ == "__main__":
     print("🏁 Старт приложения...")
     try:
-        run()
+        asyncio.run(main())
     except Exception as e:
         print(f"❌ Ошибка запуска: {e}")
     finally:
         print("⚠️ Приложение завершилось")
-
