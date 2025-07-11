@@ -32,7 +32,7 @@ async def start_handler(message: Message):
         "• За выполнение задачи — **10 баллов**\n"
         "• За то, что поставил реакцию — **1 балл**\n\n"
         "Следи за задачами, реагируй и зарабатывай очки!\n"
-        "Удачи", reply_markup=main_menu_kb())
+        "Удачи",parse_mode="Markdown" ,reply_markup=main_menu_kb())
     await add_user_into_db(message)  # Добавляем пользователя в БД
 
 # Команда: Добавить задачу — переходит в состояние ожидания текста
