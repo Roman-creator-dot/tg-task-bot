@@ -10,7 +10,7 @@ from db.base import init_db, async_session_maker
 from bot.handlers import register_handlers
 from bot.reactions import router as reaction_router
 from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 import uvicorn
 
 # ✅ Windows loop fix
@@ -20,10 +20,11 @@ if sys.platform.startswith('win'):
 # ✅ FastAPI-приложение
 app = FastAPI()
 
+# ✅ Эндпоинт для проверки Render/UptimeRobot
 @app.api_route("/", methods=["GET", "HEAD"])
 async def root(request: Request):
     if request.method == "HEAD":
-        return JSONResponse(status_code=200)
+        return Response(status_code=200)
     return {"status": "🤖 Бот работает"}
 
 # ✅ Асинхронная функция запуска бота
@@ -76,4 +77,5 @@ if __name__ == "__main__":
         print(f"❌ Ошибка запуска: {e}")
     finally:
         print("⚠️ Приложение завершилось")
+
 
